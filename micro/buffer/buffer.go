@@ -474,27 +474,27 @@ func (b *Buffer) Size() int {
 func parseDefFromFile(f config.RuntimeFile, header *highlight.Header) *highlight.Def {
 	data, err := f.Data()
 	if err != nil {
-		log.Printf("Error loading syntax file " + f.Name() + ": " + err.Error())
+		log.Print("Error loading syntax file " + f.Name() + ": " + err.Error())
 		return nil
 	}
 
 	if header == nil {
 		header, err = highlight.MakeHeaderYaml(data)
 		if err != nil {
-			log.Printf("Error parsing header for syntax file " + f.Name() + ": " + err.Error())
+			log.Print("Error parsing header for syntax file " + f.Name() + ": " + err.Error())
 			return nil
 		}
 	}
 
 	file, err := highlight.ParseFile(data)
 	if err != nil {
-		log.Printf("Error parsing syntax file " + f.Name() + ": " + err.Error())
+		log.Print("Error parsing syntax file " + f.Name() + ": " + err.Error())
 		return nil
 	}
 
 	syndef, err := highlight.ParseDef(file, header)
 	if err != nil {
-		log.Printf("Error parsing syntax file " + f.Name() + ": " + err.Error())
+		log.Print("Error parsing syntax file " + f.Name() + ": " + err.Error())
 		return nil
 	}
 
@@ -539,13 +539,13 @@ func resolveIncludes(syndef *highlight.Def) {
 	for _, f := range config.ListRuntimeFiles(config.RTSyntax) {
 		data, err := f.Data()
 		if err != nil {
-			log.Printf("Error loading syntax file " + f.Name() + ": " + err.Error())
+			log.Print("Error loading syntax file " + f.Name() + ": " + err.Error())
 			continue
 		}
 
 		header, err := highlight.MakeHeaderYaml(data)
 		if err != nil {
-			log.Printf("Error parsing syntax file " + f.Name() + ": " + err.Error())
+			log.Print("Error parsing syntax file " + f.Name() + ": " + err.Error())
 			continue
 		}
 
@@ -553,7 +553,7 @@ func resolveIncludes(syndef *highlight.Def) {
 			if header.FileType == i {
 				file, err := highlight.ParseFile(data)
 				if err != nil {
-					log.Printf("Error parsing syntax file " + f.Name() + ": " + err.Error())
+					log.Print("Error parsing syntax file " + f.Name() + ": " + err.Error())
 					continue
 				}
 				files = append(files, file)
@@ -601,13 +601,13 @@ func (b *Buffer) UpdateRules() {
 
 		data, err := f.Data()
 		if err != nil {
-			log.Printf("Error loading syntax file " + f.Name() + ": " + err.Error())
+			log.Print("Error loading syntax file " + f.Name() + ": " + err.Error())
 			continue
 		}
 
 		header, err = highlight.MakeHeaderYaml(data)
 		if err != nil {
-			log.Printf("Error parsing header for syntax file " + f.Name() + ": " + err.Error())
+			log.Print("Error parsing header for syntax file " + f.Name() + ": " + err.Error())
 			continue
 		}
 
@@ -629,13 +629,13 @@ func (b *Buffer) UpdateRules() {
 		if matchedFileType || matchedFileName || matchedFileHeader {
 			file, err := highlight.ParseFile(data)
 			if err != nil {
-				log.Printf("Error parsing syntax file " + f.Name() + ": " + err.Error())
+				log.Print("Error parsing syntax file " + f.Name() + ": " + err.Error())
 				continue
 			}
 
 			syndef, err := highlight.ParseDef(file, header)
 			if err != nil {
-				log.Printf("Error parsing syntax file " + f.Name() + ": " + err.Error())
+				log.Print("Error parsing syntax file " + f.Name() + ": " + err.Error())
 				continue
 			}
 
@@ -659,13 +659,13 @@ func (b *Buffer) UpdateRules() {
 		for _, f := range config.ListRuntimeFiles(config.RTSyntaxHeader) {
 			data, err := f.Data()
 			if err != nil {
-				log.Printf("Error loading syntax header file " + f.Name() + ": " + err.Error())
+				log.Print("Error loading syntax header file " + f.Name() + ": " + err.Error())
 				continue
 			}
 
 			header, err = highlight.MakeHeader(data)
 			if err != nil {
-				log.Printf("Error reading syntax header file", f.Name(), err)
+				log.Print("Error reading syntax header file", f.Name(), err)
 				continue
 			}
 

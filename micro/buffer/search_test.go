@@ -1,6 +1,14 @@
 package buffer
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/sedwards2009/smidgen/micro/config"
+)
+
+func init() {
+	config.InitRuntimeFiles()
+}
 
 func TestFindNextLiteral(t *testing.T) {
 	b := NewBufferFromString("hello world\nfoo bar", "")
