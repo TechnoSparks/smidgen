@@ -2,7 +2,7 @@
 
 This is the core text editor part of [micro](https://github.com/zyedidia/micro) wrapped and hacked into a component for use with [tview](https://github.com/rivo/tview).
 
-This is the same idea as [femto](https://github.com/pgavlin/femto) except redone from scratch using the version of micro from 2025-10-27.
+This is the same idea as [femto](https://github.com/pgavlin/femto) except redone from scratch using the version of micro from 2025-12-31.
 
 Note: This is still in early and rapid development. The primary purpose of Smidgen is to power my little text editor [Dinky](https://github.com/sedwards2009/dinky).
 

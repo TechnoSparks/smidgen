@@ -85,6 +85,7 @@ var defaultCommonSettings = map[string]any{
 		"colorscheme":   "default",
 		"divreverse":    true,
 		"fakecursor":    false,
+		"lockbindings":  false,
 		"mouse":         true,
 		"multiopen":     "tab",
 		"parsecursor":   false,
