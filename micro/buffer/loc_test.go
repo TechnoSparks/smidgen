@@ -3,28 +3,34 @@ package buffer
 import "testing"
 
 func TestLocLessThan(t *testing.T) {
-	if !(Loc{0, 0}.LessThan(Loc{1, 0})) {
+	a := Loc{0, 0}
+	b := Loc{1, 0}
+	c := Loc{0, 1}
+	if !a.LessThan(b) {
 		t.Error("LessThan x")
 	}
-	if !(Loc{0, 0}.LessThan(Loc{0, 1})) {
+	if !a.LessThan(c) {
 		t.Error("LessThan y")
 	}
-	if Loc{1, 0}.LessThan(Loc{0, 0}) {
+	if b.LessThan(a) {
 		t.Error("not less")
 	}
-	if Loc{0, 0}.LessThan(Loc{0, 0}) {
+	if a.LessThan(a) {
 		t.Error("equal not less")
 	}
 }
 
 func TestLocGreaterThan(t *testing.T) {
-	if !(Loc{1, 0}.GreaterThan(Loc{0, 0})) {
+	a := Loc{0, 0}
+	b := Loc{1, 0}
+	c := Loc{0, 1}
+	if !b.GreaterThan(a) {
 		t.Error("GreaterThan x")
 	}
-	if !(Loc{0, 1}.GreaterThan(Loc{0, 0})) {
+	if !c.GreaterThan(a) {
 		t.Error("GreaterThan y")
 	}
-	if Loc{0, 0}.GreaterThan(Loc{1, 0}) {
+	if a.GreaterThan(b) {
 		t.Error("not greater")
 	}
 }
@@ -32,34 +38,40 @@ func TestLocGreaterThan(t *testing.T) {
 func TestLocClamp(t *testing.T) {
 	start := Loc{2, 0}
 	end := Loc{8, 0}
-	if got := Loc{0, 0}.Clamp(start, end); got != start {
+	low := Loc{0, 0}
+	high := Loc{10, 0}
+	mid := Loc{5, 0}
+	if got := low.Clamp(start, end); got != start {
 		t.Errorf("clamp low = %+v, want %+v", got, start)
 	}
-	if got := Loc{10, 0}.Clamp(start, end); got != end {
+	if got := high.Clamp(start, end); got != end {
 		t.Errorf("clamp high = %+v, want %+v", got, end)
 	}
-	if got := Loc{5, 0}.Clamp(start, end); got != (Loc{5, 0}) {
+	if got := mid.Clamp(start, end); got != mid {
 		t.Errorf("clamp mid = %+v", got)
 	}
 }
 
 func TestLocGreaterEqualLessEqual(t *testing.T) {
-	if !(Loc{1, 0}.GreaterEqual(Loc{1, 0})) {
+	a := Loc{1, 0}
+	b := Loc{2, 0}
+	c := Loc{0, 0}
+	if !a.GreaterEqual(a) {
 		t.Error("GreaterEqual equal")
 	}
-	if !(Loc{2, 0}.GreaterEqual(Loc{1, 0})) {
+	if !b.GreaterEqual(a) {
 		t.Error("GreaterEqual greater")
 	}
-	if Loc{0, 0}.GreaterEqual(Loc{1, 0}) {
+	if c.GreaterEqual(a) {
 		t.Error("GreaterEqual false")
 	}
-	if !(Loc{1, 0}.LessEqual(Loc{1, 0})) {
+	if !a.LessEqual(a) {
 		t.Error("LessEqual equal")
 	}
-	if !(Loc{0, 0}.LessEqual(Loc{1, 0})) {
+	if !c.LessEqual(a) {
 		t.Error("LessEqual less")
 	}
-	if Loc{2, 0}.LessEqual(Loc{1, 0}) {
+	if b.LessEqual(a) {
 		t.Error("LessEqual false")
 	}
 }

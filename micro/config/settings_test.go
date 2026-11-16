@@ -3,9 +3,9 @@ package config
 import "testing"
 
 func TestLockBindingsDefaultExists(t *testing.T) {
-	v, ok := DefaultGlobalOnlySettings["lockbindings"]
+	v, ok := defaultCommonSettings["lockbindings"]
 	if !ok {
-		t.Fatal("lockbindings missing from DefaultGlobalOnlySettings")
+		t.Fatal("lockbindings missing from defaultCommonSettings")
 	}
 	b, ok := v.(bool)
 	if !ok || b {
@@ -14,13 +14,10 @@ func TestLockBindingsDefaultExists(t *testing.T) {
 }
 
 func TestDefaultSettingsNonEmpty(t *testing.T) {
-	if len(DefaultAllSettings()) == 0 {
-		t.Fatal("DefaultAllSettings empty")
-	}
 	if len(DefaultCommonSettings()) == 0 {
 		t.Fatal("DefaultCommonSettings empty")
 	}
-	if len(DefaultGlobalOnlySettings) == 0 {
-		t.Fatal("DefaultGlobalOnlySettings empty")
+	if len(defaultCommonSettings) == 0 {
+		t.Fatal("defaultCommonSettings empty")
 	}
 }

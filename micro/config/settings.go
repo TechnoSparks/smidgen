@@ -55,6 +55,7 @@ var defaultCommonSettings = map[string]any{
 	"hltrailingws":    false,
 	"indentchar":      " ", // Deprecated
 	"keepautoindent":  false,
+	"lockbindings":    false,
 	"matchbrace":      true,
 	"matchbraceleft":  true,
 	"matchbracestyle": "underline",

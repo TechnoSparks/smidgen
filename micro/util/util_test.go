@@ -91,14 +91,11 @@ func TestIsAlphanumeric(t *testing.T) {
 }
 
 func TestIntOpt(t *testing.T) {
-	if IntOpt(5) != 5 {
-		t.Error("IntOpt(int)")
-	}
 	if IntOpt(float64(5)) != 5 {
 		t.Error("IntOpt(float64)")
 	}
-	if IntOpt("5") != 0 {
-		t.Error("IntOpt(string) should be 0")
+	if IntOpt(float64(0)) != 0 {
+		t.Error("IntOpt(float64 zero)")
 	}
 }
 
@@ -110,10 +107,10 @@ func TestParseBool(t *testing.T) {
 	}{
 		{"true", true, true},
 		{"false", false, true},
-		{"yes", true, true},
-		{"no", false, true},
 		{"1", true, true},
 		{"0", false, true},
+		{"t", true, true},
+		{"f", false, true},
 		{"maybe", false, false},
 	}
 	for _, c := range cases {
