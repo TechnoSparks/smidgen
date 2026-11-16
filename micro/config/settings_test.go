@@ -12,3 +12,15 @@ func TestLockBindingsDefaultExists(t *testing.T) {
 		t.Fatalf("lockbindings default should be false, got %v", v)
 	}
 }
+
+func TestDefaultSettingsNonEmpty(t *testing.T) {
+	if len(DefaultAllSettings()) == 0 {
+		t.Fatal("DefaultAllSettings empty")
+	}
+	if len(DefaultCommonSettings()) == 0 {
+		t.Fatal("DefaultCommonSettings empty")
+	}
+	if len(DefaultGlobalOnlySettings) == 0 {
+		t.Fatal("DefaultGlobalOnlySettings empty")
+	}
+}
