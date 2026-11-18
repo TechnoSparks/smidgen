@@ -949,9 +949,27 @@ func (h *BufPane) Search(str string, useRegex bool, caseSensitive bool, searchDo
 	if !searchDown {
 		return h.SearchPrevious(str, useRegex, caseSensitive)
 	}
-	match, found, err := h.Buf.FindNext(str, h.Buf.Start(), h.Buf.End(), h.Cursor.Loc, true, useRegex, caseSensitive)
+
+	searchLoc := h.Cursor.Loc
+	if h.Cursor.HasSelection() {
+		searchLoc = h.Cursor.CurSelection[1]
+	}
+
+	match, found, err := h.Buf.FindNext(str, h.Buf.Start(), h.Buf.End(), searchLoc, true, useRegex, caseSensitive)
 	if err != nil {
 		return false, err
+	}
+	if found && searchLoc == match[0] && match[0] == match[1] {
+		// Skip an empty match at the present cursor location.
+		if searchLoc == h.Buf.End() {
+			searchLoc = h.Buf.Start()
+		} else {
+			searchLoc = searchLoc.Move(1, h.Buf)
+		}
+		match, found, err = h.Buf.FindNext(str, h.Buf.Start(), h.Buf.End(), searchLoc, true, useRegex, caseSensitive)
+		if err != nil {
+			return false, err
+		}
 	}
 	if found {
 		h.Cursor.SetSelectionStart(match[0])
@@ -992,10 +1010,10 @@ func (h *BufPane) SearchPrevious(str string, useRegex bool, caseSensitive bool) 
 	}
 	if found && searchLoc == match[0] && match[0] == match[1] {
 		// Skip an empty match at the present cursor location.
-		if searchLoc == h.Buf.End() {
-			searchLoc = h.Buf.Start()
+		if searchLoc == h.Buf.Start() {
+			searchLoc = h.Buf.End()
 		} else {
-			searchLoc = searchLoc.Move(1, h.Buf)
+			searchLoc = searchLoc.Move(-1, h.Buf)
 		}
 		match, found, err = h.Buf.FindNext(str, h.Buf.Start(), h.Buf.End(), searchLoc, false, useRegex, caseSensitive)
 		if err != nil {
