@@ -1412,14 +1412,28 @@ func (h *BufPane) PasteString(clip string) {
 		}
 	}
 
-	if h.Cursor.HasSelection() {
+	hadSelection := h.Cursor.HasSelection()
+	if hadSelection {
 		h.Cursor.DeleteSelection()
 		h.Cursor.ResetSelection()
 	}
 
-	h.Buf.Insert(h.Cursor.Loc, clip)
+	// VS Code-style linewise paste: when the clipboard holds a whole line
+	// paste it above the current line instead of at the cursor column.
+	insertLoc := h.Cursor.Loc
+	if !hadSelection && isLineClip(clip) {
+		insertLoc = buffer.Loc{X: 0, Y: h.Cursor.Loc.Y}
+	}
+
+	h.Buf.Insert(insertLoc, clip)
 	// h.Cursor.Loc = h.Cursor.Loc.Move(Count(clip), h.Buf)
 	h.freshClip = false
+}
+
+// isLineClip reports whether clip represents complete line(s) copied
+// by a linewise copy/cut operation (ends with a line ending)
+func isLineClip(clip string) bool {
+	return clip != "" && (strings.HasSuffix(clip, "\n") || strings.HasSuffix(clip, "\r\n"))
 }
 
 // JumpToMatchingBrace moves the cursor to the matching brace if it is

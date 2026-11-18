@@ -222,6 +222,7 @@ const (
 	ActionCopy                    = "Copy"
 	ActionCut                     = "Cut"
 	ActionCutLine                 = "CutLine"
+	ActionCopyLine                = "CopyLine"
 	ActionDuplicateLine           = "DuplicateLine"
 	ActionDeleteLine              = "DeleteLine"
 	ActionMoveLinesUp             = "MoveLinesUp"
