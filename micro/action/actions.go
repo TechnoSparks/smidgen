@@ -945,6 +945,9 @@ func (h *BufPane) InsertTab() bool {
 // Search for a string/regex and select it
 //
 // Returns true,nil if the string was found, false,nil if not found, and false,error on error.
+//
+// searchDown selects the search direction. When false, Search delegates to
+// SearchPrevious, which performs the selection-aware backward search.
 func (h *BufPane) Search(str string, useRegex bool, caseSensitive bool, searchDown bool) (bool, error) {
 	if !searchDown {
 		return h.SearchPrevious(str, useRegex, caseSensitive)
@@ -979,7 +982,7 @@ func (h *BufPane) Search(str string, useRegex bool, caseSensitive bool, searchDo
 		h.GotoLoc(h.Cursor.CurSelection[1])
 		h.Buf.LastSearch = str
 		h.Buf.LastSearchRegex = useRegex
-		h.Buf.HighlightSearch = h.Buf.Settings["hlsearch"].(bool)
+		h.Buf.HighlightSearch = hlsearchEnabled(h.Buf)
 		return true, nil
 	} else {
 		return false, nil
@@ -1029,10 +1032,18 @@ func (h *BufPane) SearchPrevious(str string, useRegex bool, caseSensitive bool) 
 		h.GotoLoc(h.Cursor.CurSelection[1])
 		h.Buf.LastSearch = str
 		h.Buf.LastSearchRegex = useRegex
-		h.Buf.HighlightSearch = h.Buf.Settings["hlsearch"].(bool)
+		h.Buf.HighlightSearch = hlsearchEnabled(h.Buf)
 		return true, nil
 	}
 	return false, nil
+}
+
+// hlsearchEnabled reports whether search-result highlighting is enabled for b.
+func hlsearchEnabled(b *buffer.Buffer) bool {
+	if enabled, ok := b.Settings["hlsearch"].(bool); ok {
+		return enabled
+	}
+	return false
 }
 
 // ToggleHighlightSearch toggles highlighting all instances of the last used search term
