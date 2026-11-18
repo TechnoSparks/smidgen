@@ -946,7 +946,10 @@ func (h *BufPane) InsertTab() bool {
 //
 // Returns true,nil if the string was found, false,nil if not found, and false,error on error.
 func (h *BufPane) Search(str string, useRegex bool, caseSensitive bool, searchDown bool) (bool, error) {
-	match, found, err := h.Buf.FindNext(str, h.Buf.Start(), h.Buf.End(), h.Cursor.Loc, searchDown, useRegex, caseSensitive)
+	if !searchDown {
+		return h.SearchPrevious(str, useRegex, caseSensitive)
+	}
+	match, found, err := h.Buf.FindNext(str, h.Buf.Start(), h.Buf.End(), h.Cursor.Loc, true, useRegex, caseSensitive)
 	if err != nil {
 		return false, err
 	}
@@ -963,6 +966,55 @@ func (h *BufPane) Search(str string, useRegex bool, caseSensitive bool, searchDo
 	} else {
 		return false, nil
 	}
+}
+
+// SearchPrevious searches backwards for the given string/regex.
+//
+// It mirrors micro's previous-search behaviour: when a selection already
+// exists the search starts at the beginning of that selection so the current
+// match is not selected again, and zero-width matches are skipped.
+//
+// Returns true,nil if the string was found, false,nil if not found, and
+// false,error on error.
+func (h *BufPane) SearchPrevious(str string, useRegex bool, caseSensitive bool) (bool, error) {
+	if str == "" {
+		return false, nil
+	}
+
+	searchLoc := h.Cursor.Loc
+	if h.Cursor.HasSelection() {
+		searchLoc = h.Cursor.CurSelection[0]
+	}
+
+	match, found, err := h.Buf.FindNext(str, h.Buf.Start(), h.Buf.End(), searchLoc, false, useRegex, caseSensitive)
+	if err != nil {
+		return false, err
+	}
+	if found && searchLoc == match[0] && match[0] == match[1] {
+		// Skip an empty match at the present cursor location.
+		if searchLoc == h.Buf.End() {
+			searchLoc = h.Buf.Start()
+		} else {
+			searchLoc = searchLoc.Move(1, h.Buf)
+		}
+		match, found, err = h.Buf.FindNext(str, h.Buf.Start(), h.Buf.End(), searchLoc, false, useRegex, caseSensitive)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	if found {
+		h.Cursor.SetSelectionStart(match[0])
+		h.Cursor.SetSelectionEnd(match[1])
+		h.Cursor.OrigSelection[0] = h.Cursor.CurSelection[0]
+		h.Cursor.OrigSelection[1] = h.Cursor.CurSelection[1]
+		h.GotoLoc(h.Cursor.CurSelection[1])
+		h.Buf.LastSearch = str
+		h.Buf.LastSearchRegex = useRegex
+		h.Buf.HighlightSearch = h.Buf.Settings["hlsearch"].(bool)
+		return true, nil
+	}
+	return false, nil
 }
 
 // ToggleHighlightSearch toggles highlighting all instances of the last used search term
