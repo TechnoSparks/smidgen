@@ -92,6 +92,29 @@ func TestTerminalModeSendsOSC52(t *testing.T) {
 	}
 }
 
+type noTtyScreen struct {
+	tcell.Screen
+}
+
+func (noTtyScreen) Tty() (tcell.Tty, bool) {
+	return nil, false
+}
+
+func TestTerminalModeWithoutTerminalKeepsCopy(t *testing.T) {
+	// No screen yet (before the first draw), and a screen without a tty (e.g. the Windows console).
+	screens := []tcell.Screen{nil, noTtyScreen{}}
+	for _, screen := range screens {
+		setUp(t, ModeTerminal, true)
+		SetScreen(screen)
+
+		ClipboardWriteAll("abc")
+
+		if got := readAll(t); got != "abc" {
+			t.Errorf("screen %T: paste = %q, want %q", screen, got, "abc")
+		}
+	}
+}
+
 func TestInternalModeStaysInside(t *testing.T) {
 	native, tty := setUp(t, ModeInternal, true)
 
@@ -150,6 +173,21 @@ func TestExternalModeFailedWriteFallsBackToInternal(t *testing.T) {
 	}
 }
 
+func TestExternalModeSuccessfulCopyClearsFallback(t *testing.T) {
+	native, _ := setUp(t, ModeExternal, true)
+	native.writeErr = errors.New("X server gone")
+	ClipboardWriteAll("failed copy")
+
+	native.writeErr = nil
+	ClipboardWriteAll("good copy")
+	native.readErr = errors.New("no text in clipboard")
+
+	clip, err := ClipboardReadAll()
+	if err == nil || clip != "" {
+		t.Errorf("paste = %q, %v; want no text and the read error", clip, err)
+	}
+}
+
 func TestExternalModeWithoutDisplayUsesInternal(t *testing.T) {
 	native, tty := setUp(t, ModeExternal, false)
 
@@ -178,8 +216,8 @@ func TestSetMode(t *testing.T) {
 	}
 
 	SetMode(ModeTerminal)
-	if mode != ModeTerminal {
-		t.Errorf("mode = %q, want %q", mode, ModeTerminal)
+	if Mode() != ModeTerminal {
+		t.Errorf("Mode() = %q, want %q", Mode(), ModeTerminal)
 	}
 	if got := readAll(t); got != "" {
 		t.Errorf("paste after changing mode = %q, want empty", got)

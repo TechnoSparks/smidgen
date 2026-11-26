@@ -41,6 +41,11 @@ func SetMode(newMode string) {
 	internalClipboard = ""
 }
 
+// Mode returns the current clipboard mode.
+func Mode() string {
+	return mode
+}
+
 // SetScreen sets the screen used to copy to the terminal clipboard (OSC 52)
 // in terminal mode.
 func SetScreen(s tcell.Screen) {
