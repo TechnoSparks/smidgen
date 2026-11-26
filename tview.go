@@ -1,6 +1,9 @@
 package smidgen
 
 import (
+	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -133,6 +136,25 @@ func (colorscheme Colorscheme) GetColor(color string) tcell.Style {
 	return config.Colorscheme(colorscheme).GetColor(color)
 }
 
+var userColorschemeDir string
+
+// SetUserColorschemeDir sets a directory of user colorschemes (*.micro files). ListColorschemes
+// and LoadColorscheme include them, and a user colorscheme replaces a built-in one with the same name.
+func SetUserColorschemeDir(dir string) {
+	userColorschemeDir = dir
+}
+
+// LoadColorscheme loads the user colorscheme with this name, or else the built-in one.
+func LoadColorscheme(name string) (Colorscheme, bool) {
+	// Only plain names, so a name cannot point outside the directory.
+	if userColorschemeDir != "" && name != "" && filepath.Base(name) == name {
+		if data, err := os.ReadFile(filepath.Join(userColorschemeDir, name+".micro")); err == nil {
+			return ParseColorscheme(string(data)), true
+		}
+	}
+	return LoadInternalColorscheme(name)
+}
+
 func LoadInternalColorscheme(name string) (Colorscheme, bool) {
 	data, err := runtime.Asset("runtime/colorschemes/" + name + ".micro")
 	if err != nil {
@@ -153,6 +175,26 @@ func ListColorschemes() []string {
 	var schemes []string
 	for _, f := range files {
 		schemes = append(schemes, f[:len(f)-6]) // Remove .micro extension
+	}
+	return append(schemes, listUserColorschemes(schemes)...)
+}
+
+// listUserColorschemes returns the user colorschemes that are not already in builtIn.
+func listUserColorschemes(builtIn []string) []string {
+	if userColorschemeDir == "" {
+		return nil
+	}
+	entries, err := os.ReadDir(userColorschemeDir)
+	if err != nil {
+		return nil
+	}
+	var schemes []string
+	for _, entry := range entries {
+		name, ok := strings.CutSuffix(entry.Name(), ".micro")
+		if !ok || entry.IsDir() || slices.Contains(builtIn, name) {
+			continue
+		}
+		schemes = append(schemes, name)
 	}
 	return schemes
 }
