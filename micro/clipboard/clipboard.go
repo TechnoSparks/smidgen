@@ -4,17 +4,45 @@ import (
 	"encoding/base64"
 	"os"
 	"runtime"
+	"slices"
 
 	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
 )
 
+// Clipboard modes, as in micro's "clipboard" option.
+const (
+	// ModeTerminal copies to the terminal clipboard with OSC 52. Paste reads the internal clipboard.
+	ModeTerminal = "terminal"
+	// ModeExternal uses the system clipboard (pbcopy, xclip, xsel, wl-copy).
+	ModeExternal = "external"
+	// ModeInternal keeps copied text inside the program only.
+	ModeInternal = "internal"
+)
+
+var modes = []string{ModeTerminal, ModeExternal, ModeInternal}
+
+var mode = ModeExternal
 var internalClipboard string
 var useInternalClipboard bool
 var terminalScreen tcell.Screen
 
+// The system clipboard functions. Tests replace them.
+var nativeReadAll = clipboard.ReadAll
+var nativeWriteAll = clipboard.WriteAll
+
+// SetMode sets the clipboard mode to one of ModeTerminal, ModeExternal or ModeInternal.
+// Unknown modes are ignored. Changing the mode clears the internal clipboard.
+func SetMode(newMode string) {
+	if newMode == mode || !slices.Contains(modes, newMode) {
+		return
+	}
+	mode = newMode
+	internalClipboard = ""
+}
+
 // SetScreen sets the screen used to copy to the terminal clipboard (OSC 52)
-// when the native clipboard is not available, e.g. over SSH.
+// in terminal mode.
 func SetScreen(s tcell.Screen) {
 	terminalScreen = s
 }
@@ -34,20 +62,31 @@ func writeTerminalClipboard(s string) {
 }
 
 func ClipboardReadAll() (string, error) {
-	if !useInternalClipboard {
-		if clip, err := clipboard.ReadAll(); err == nil {
-			return clip, nil
-		}
+	if mode != ModeExternal || useInternalClipboard {
+		return internalClipboard, nil
 	}
-	return internalClipboard, nil
+	clip, err := nativeReadAll()
+	// Fall back only to text that the system clipboard did not take.
+	if err != nil && internalClipboard != "" {
+		return internalClipboard, nil
+	}
+	return clip, err
 }
 
 func ClipboardWriteAll(s string) error {
-	internalClipboard = s
-	if !useInternalClipboard && clipboard.WriteAll(s) == nil {
-		return nil
+	switch mode {
+	case ModeTerminal:
+		internalClipboard = s
+		writeTerminalClipboard(s)
+	case ModeInternal:
+		internalClipboard = s
+	case ModeExternal:
+		if !useInternalClipboard && nativeWriteAll(s) == nil {
+			internalClipboard = ""
+			return nil
+		}
+		internalClipboard = s
 	}
-	writeTerminalClipboard(s)
 	return nil
 }
 
