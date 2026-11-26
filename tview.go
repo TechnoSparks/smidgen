@@ -1,6 +1,11 @@
 package smidgen
 
 import (
+	"errors"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -133,6 +138,40 @@ func (colorscheme Colorscheme) GetColor(color string) tcell.Style {
 	return config.Colorscheme(colorscheme).GetColor(color)
 }
 
+var userColorschemeDir string
+
+// SetUserColorschemeDir sets a directory of user colorschemes (*.micro files). ListColorschemes
+// and LoadColorscheme include them, and a user colorscheme replaces a built-in one with the same name.
+func SetUserColorschemeDir(dir string) {
+	userColorschemeDir = dir
+}
+
+// LoadColorscheme loads the user colorscheme with this name, or else the built-in one.
+func LoadColorscheme(name string) (Colorscheme, bool) {
+	colorscheme, _, ok := LoadColorschemeWithProblems(name)
+	return colorscheme, ok
+}
+
+// LoadColorschemeWithProblems is like LoadColorscheme. It also returns a description of each
+// invalid statement in a user colorscheme file, as "line N: ...". Invalid statements are skipped.
+func LoadColorschemeWithProblems(name string) (Colorscheme, []string, bool) {
+	var problems []string
+	// Only plain names, so a name cannot point outside the directory.
+	if userColorschemeDir != "" && name != "" && filepath.Base(name) == name {
+		data, err := os.ReadFile(filepath.Join(userColorschemeDir, name+".micro"))
+		if err == nil {
+			colorscheme, problems := config.ParseColorschemeWithProblems(string(data))
+			return Colorscheme(colorscheme), problems, true
+		}
+		// A missing file just means there is no user colorscheme with this name.
+		if !errors.Is(err, fs.ErrNotExist) {
+			problems = []string{"cannot read file: " + err.Error()}
+		}
+	}
+	colorscheme, ok := LoadInternalColorscheme(name)
+	return colorscheme, problems, ok
+}
+
 func LoadInternalColorscheme(name string) (Colorscheme, bool) {
 	data, err := runtime.Asset("runtime/colorschemes/" + name + ".micro")
 	if err != nil {
@@ -153,6 +192,26 @@ func ListColorschemes() []string {
 	var schemes []string
 	for _, f := range files {
 		schemes = append(schemes, f[:len(f)-6]) // Remove .micro extension
+	}
+	return append(schemes, listUserColorschemes(schemes)...)
+}
+
+// listUserColorschemes returns the user colorschemes that are not already in builtIn.
+func listUserColorschemes(builtIn []string) []string {
+	if userColorschemeDir == "" {
+		return nil
+	}
+	entries, err := os.ReadDir(userColorschemeDir)
+	if err != nil {
+		return nil
+	}
+	var schemes []string
+	for _, entry := range entries {
+		name, ok := strings.CutSuffix(entry.Name(), ".micro")
+		if !ok || entry.IsDir() || slices.Contains(builtIn, name) {
+			continue
+		}
+		schemes = append(schemes, name)
 	}
 	return schemes
 }
