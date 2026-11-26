@@ -69,7 +69,7 @@ func (h *BufPane) MousePress(e *tcell.EventMouse, takeFocus func()) bool {
 			h.DoubleClick = false
 
 			h.Cursor.SelectLine()
-			h.Cursor.CopySelection()
+			h.copyMouseSelection()
 		} else {
 			// Double click
 			h.lastClickTime = time.Now()
@@ -78,7 +78,7 @@ func (h *BufPane) MousePress(e *tcell.EventMouse, takeFocus func()) bool {
 			h.TripleClick = false
 
 			h.Cursor.SelectWord()
-			h.Cursor.CopySelection()
+			h.copyMouseSelection()
 		}
 	} else {
 		h.DoubleClick = false
@@ -131,9 +131,16 @@ func (h *BufPane) MouseRelease(e *tcell.EventMouse, takeFocus func()) bool {
 	// }
 
 	if h.Cursor.HasSelection() {
-		h.Cursor.CopySelection()
+		h.copyMouseSelection()
 	}
 	return true
+}
+
+// copyMouseSelection copies a selection made with the mouse, if copy on select is on.
+func (h *BufPane) copyMouseSelection() {
+	if clipboard.CopyOnSelect() {
+		h.Cursor.CopySelection()
+	}
 }
 
 // ScrollUpAction scrolls the view up
