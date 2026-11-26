@@ -11,18 +11,20 @@ var internalClipboard string
 var useInternalClipboard bool
 
 func ClipboardReadAll() (string, error) {
-	if useInternalClipboard {
-		return internalClipboard, nil
+	if !useInternalClipboard {
+		if clip, err := clipboard.ReadAll(); err == nil {
+			return clip, nil
+		}
 	}
-	return clipboard.ReadAll()
+	return internalClipboard, nil
 }
 
 func ClipboardWriteAll(s string) error {
-	if useInternalClipboard {
-		internalClipboard = s
+	if !useInternalClipboard && clipboard.WriteAll(s) == nil {
 		return nil
 	}
-	return clipboard.WriteAll(s)
+	internalClipboard = s
+	return nil
 }
 
 func isUnix() bool {
