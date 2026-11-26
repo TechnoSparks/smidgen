@@ -5,10 +5,18 @@ import (
 	"runtime"
 
 	"github.com/atotto/clipboard"
+	"github.com/gdamore/tcell/v2"
 )
 
 var internalClipboard string
 var useInternalClipboard bool
+var terminalScreen tcell.Screen
+
+// SetScreen sets the screen used to copy to the terminal clipboard (OSC 52)
+// when the native clipboard is not available, e.g. over SSH.
+func SetScreen(s tcell.Screen) {
+	terminalScreen = s
+}
 
 func ClipboardReadAll() (string, error) {
 	if !useInternalClipboard {
@@ -24,6 +32,9 @@ func ClipboardWriteAll(s string) error {
 		return nil
 	}
 	internalClipboard = s
+	if terminalScreen != nil {
+		terminalScreen.SetClipboard([]byte(s))
+	}
 	return nil
 }
 
