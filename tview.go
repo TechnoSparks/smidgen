@@ -7,6 +7,7 @@ import (
 	"github.com/rivo/tview"
 	"github.com/sedwards2009/smidgen/micro/action"
 	"github.com/sedwards2009/smidgen/micro/buffer"
+	"github.com/sedwards2009/smidgen/micro/clipboard"
 	"github.com/sedwards2009/smidgen/micro/config"
 	"github.com/sedwards2009/smidgen/micro/display"
 	"github.com/sedwards2009/smidgen/runtime"
@@ -42,6 +43,7 @@ func NewView(app *tview.Application, buffer *buffer.Buffer) *View {
 }
 
 func (v *View) Draw(screen tcell.Screen) {
+	clipboard.SetScreen(screen)
 	v.Box.Draw(screen)
 
 	innerX, innerY, width, height := v.GetInnerRect()
