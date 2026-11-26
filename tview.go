@@ -146,13 +146,22 @@ func SetUserColorschemeDir(dir string) {
 
 // LoadColorscheme loads the user colorscheme with this name, or else the built-in one.
 func LoadColorscheme(name string) (Colorscheme, bool) {
+	colorscheme, _, ok := LoadColorschemeWithProblems(name)
+	return colorscheme, ok
+}
+
+// LoadColorschemeWithProblems is like LoadColorscheme. It also returns a description of each
+// invalid statement in a user colorscheme file, as "line N: ...". Invalid statements are skipped.
+func LoadColorschemeWithProblems(name string) (Colorscheme, []string, bool) {
 	// Only plain names, so a name cannot point outside the directory.
 	if userColorschemeDir != "" && name != "" && filepath.Base(name) == name {
 		if data, err := os.ReadFile(filepath.Join(userColorschemeDir, name+".micro")); err == nil {
-			return ParseColorscheme(string(data)), true
+			colorscheme, problems := config.ParseColorschemeWithProblems(string(data))
+			return Colorscheme(colorscheme), problems, true
 		}
 	}
-	return LoadInternalColorscheme(name)
+	colorscheme, ok := LoadInternalColorscheme(name)
+	return colorscheme, nil, ok
 }
 
 func LoadInternalColorscheme(name string) (Colorscheme, bool) {

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 	"strconv"
@@ -81,53 +82,53 @@ func (colorscheme Colorscheme) GetDefault() tcell.Style {
 // For example, color-link keyword (blue,red) makes all keywords have a blue foreground and
 // red background
 func ParseColorscheme(text string) Colorscheme {
-	lines := strings.Split(text, "\n")
+	c, _ := ParseColorschemeWithProblems(text)
+	return c
+}
 
+var colorLineParser = regexp.MustCompile(`color-link\s+(\S*)\s+"(.*)"`)
+
+// ParseColorschemeWithProblems is like ParseColorscheme. It also returns a description of each
+// invalid statement, as "line N: ...". Invalid statements are skipped and logged.
+func ParseColorschemeWithProblems(text string) (Colorscheme, []string) {
 	c := make(Colorscheme)
+	problems := []string{}
 
-	cleanLines := []string{}
-	for _, line := range lines {
+	type statement struct {
+		link, colors string
+	}
+	statements := []statement{}
+	for i, line := range strings.Split(text, "\n") {
 		if strings.TrimSpace(line) == "" ||
 			strings.TrimSpace(line)[0] == '#' {
 			// Ignore this line
 			continue
 		}
-		cleanLines = append(cleanLines, line)
+		matches := colorLineParser.FindStringSubmatch(line)
+		if len(matches) != 3 {
+			log.Printf("Color-link statement is not valid (line %d): %s", i+1, line)
+			problems = append(problems, fmt.Sprintf("line %d: not a valid color-link statement", i+1))
+			continue
+		}
+		statements = append(statements, statement{link: matches[1], colors: matches[2]})
 	}
 
 	defaultStyle := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorBlack)
 	c["default"] = defaultStyle
-	for _, line := range cleanLines {
-		link, style := parseColorLine(line, defaultStyle)
-		if link == "default" {
-			defaultStyle = style
+	for _, s := range statements {
+		if s.link == "default" {
+			defaultStyle = StringToStyle(s.colors, defaultStyle)
 			break
 		}
 	}
 
-	for _, line := range cleanLines {
-		link, style := parseColorLine(line, defaultStyle)
-		if link != "" {
-			c[link] = style
+	for _, s := range statements {
+		if s.link != "" {
+			c[s.link] = StringToStyle(s.colors, defaultStyle)
 		}
 	}
 
-	return c
-}
-
-func parseColorLine(line string, defaultStyle tcell.Style) (string, tcell.Style) {
-	parser := regexp.MustCompile(`color-link\s+(\S*)\s+"(.*)"`)
-	matches := parser.FindSubmatch([]byte(line))
-	if len(matches) == 3 {
-		link := string(matches[1])
-		colors := string(matches[2])
-
-		style := StringToStyle(colors, defaultStyle)
-		return link, style
-	} else {
-		log.Printf("Color-link statement is not valid: %s", line)
-	}
-	return "", defaultStyle
+	return c, problems
 }
 
 // StringToStyle returns a style from a string

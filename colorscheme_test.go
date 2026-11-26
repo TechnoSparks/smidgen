@@ -157,3 +157,61 @@ func TestLoadColorschemeBrokenUserFile(t *testing.T) {
 		t.Errorf("partial file background = %v, want %v", got, want)
 	}
 }
+
+func TestLoadColorschemeWithProblems(t *testing.T) {
+	log.SetOutput(io.Discard)
+	t.Cleanup(func() {
+		log.SetOutput(os.Stderr)
+	})
+	setUpUserColorschemes(t, map[string]string{
+		"valid.micro": "# comment\n\ncolor-link default \"#112233,#445566\"\n",
+		"mixed.micro": "# comment\ncolor-link default \"#112233,#445566\"\n\nnonsense\ncolor-link comment \"#ff0000\"\nmore nonsense\r\ncolor-link\n",
+		"empty.micro": "",
+	})
+
+	tests := []struct {
+		name         string
+		wantOK       bool
+		wantProblems []string
+	}{
+		{name: "valid", wantOK: true, wantProblems: nil},
+		{name: "empty", wantOK: true, wantProblems: nil},
+		{name: "mixed", wantOK: true, wantProblems: []string{
+			"line 4: not a valid color-link statement",
+			"line 6: not a valid color-link statement",
+			"line 7: not a valid color-link statement",
+		}},
+		{name: "monokai", wantOK: true, wantProblems: nil},
+		{name: "no-such-scheme", wantOK: false, wantProblems: nil},
+	}
+	for _, tt := range tests {
+		colorscheme, problems, ok := LoadColorschemeWithProblems(tt.name)
+		if ok != tt.wantOK {
+			t.Errorf("LoadColorschemeWithProblems(%q) ok = %v, want %v", tt.name, ok, tt.wantOK)
+		}
+		if !slices.Equal(problems, tt.wantProblems) {
+			t.Errorf("LoadColorschemeWithProblems(%q) problems = %q, want %q", tt.name, problems, tt.wantProblems)
+		}
+		if tt.name == "mixed" {
+			// The valid lines around the bad ones still apply.
+			if got, want := defaultBackground(colorscheme), tcell.GetColor("#445566"); got != want {
+				t.Errorf("mixed file background = %v, want %v", got, want)
+			}
+			if fg, _, _ := colorscheme.GetColor("comment").Decompose(); fg != tcell.GetColor("#ff0000") {
+				t.Errorf("mixed file comment colour = %v, want #ff0000", fg)
+			}
+		}
+	}
+}
+
+func TestBuiltInColorschemesHaveNoProblems(t *testing.T) {
+	for _, name := range ListColorschemes() {
+		_, problems, ok := LoadColorschemeWithProblems(name)
+		if !ok {
+			t.Errorf("built-in colorscheme %q failed to load", name)
+		}
+		if len(problems) > 0 {
+			t.Errorf("built-in colorscheme %q has problems: %q", name, problems)
+		}
+	}
+}
