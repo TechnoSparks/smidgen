@@ -28,10 +28,10 @@ func ClipboardReadAll() (string, error) {
 }
 
 func ClipboardWriteAll(s string) error {
+	internalClipboard = s
 	if !useInternalClipboard && clipboard.WriteAll(s) == nil {
 		return nil
 	}
-	internalClipboard = s
 	if terminalScreen != nil {
 		terminalScreen.SetClipboard([]byte(s))
 	}
