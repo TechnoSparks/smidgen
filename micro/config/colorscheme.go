@@ -1,7 +1,7 @@
 package config
 
 import (
-	"fmt"
+	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -125,7 +125,7 @@ func parseColorLine(line string, defaultStyle tcell.Style) (string, tcell.Style)
 		style := StringToStyle(colors, defaultStyle)
 		return link, style
 	} else {
-		fmt.Println("Color-link statement is not valid:", line)
+		log.Printf("Color-link statement is not valid: %s", line)
 	}
 	return "", defaultStyle
 }
