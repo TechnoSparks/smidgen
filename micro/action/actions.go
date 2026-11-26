@@ -1464,7 +1464,8 @@ func (h *BufPane) MoveLinesDown() bool {
 // Delete and paste if the user has a selection
 func (h *BufPane) Paste() bool {
 	clip, err := clipboard.ClipboardReadAll()
-	if err == nil {
+	// Pasting nothing would still delete the selection.
+	if err == nil && clip != "" {
 		h.PasteString(clip)
 	}
 	h.Relocate()
@@ -1474,7 +1475,8 @@ func (h *BufPane) Paste() bool {
 // PastePrimary pastes from the primary clipboard (only use on linux)
 func (h *BufPane) PastePrimary() bool {
 	clip, err := clipboard.ClipboardReadAll()
-	if err == nil {
+	// Pasting nothing would still delete the selection.
+	if err == nil && clip != "" {
 		h.PasteString(clip)
 	}
 	h.Relocate()
