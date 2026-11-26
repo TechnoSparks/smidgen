@@ -1,6 +1,7 @@
 package clipboard
 
 import (
+	"encoding/base64"
 	"os"
 	"runtime"
 
@@ -18,6 +19,20 @@ func SetScreen(s tcell.Screen) {
 	terminalScreen = s
 }
 
+// writeTerminalClipboard sends s to the terminal clipboard with OSC 52.
+// It writes to the tty directly because tcell only sends OSC 52 for
+// xterm-like TERM values, which leaves out tmux, screen and kitty.
+func writeTerminalClipboard(s string) {
+	if terminalScreen == nil {
+		return
+	}
+	tty, ok := terminalScreen.Tty()
+	if !ok {
+		return
+	}
+	tty.Write([]byte("\x1b]52;c;" + base64.StdEncoding.EncodeToString([]byte(s)) + "\a"))
+}
+
 func ClipboardReadAll() (string, error) {
 	if !useInternalClipboard {
 		if clip, err := clipboard.ReadAll(); err == nil {
@@ -32,9 +47,7 @@ func ClipboardWriteAll(s string) error {
 	if !useInternalClipboard && clipboard.WriteAll(s) == nil {
 		return nil
 	}
-	if terminalScreen != nil {
-		terminalScreen.SetClipboard([]byte(s))
-	}
+	writeTerminalClipboard(s)
 	return nil
 }
 
