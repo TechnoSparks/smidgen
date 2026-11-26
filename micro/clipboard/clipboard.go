@@ -23,6 +23,7 @@ const (
 var modes = []string{ModeTerminal, ModeExternal, ModeInternal}
 
 var mode = ModeExternal
+var copyOnSelect = true
 var internalClipboard string
 var useInternalClipboard bool
 var terminalScreen tcell.Screen
@@ -44,6 +45,16 @@ func SetMode(newMode string) {
 // Mode returns the current clipboard mode.
 func Mode() string {
 	return mode
+}
+
+// SetCopyOnSelect sets whether selecting text with the mouse also copies it. It is on by default.
+func SetCopyOnSelect(enabled bool) {
+	copyOnSelect = enabled
+}
+
+// CopyOnSelect reports whether selecting text with the mouse also copies it.
+func CopyOnSelect() bool {
+	return copyOnSelect
 }
 
 // SetScreen sets the screen used to copy to the terminal clipboard (OSC 52)
