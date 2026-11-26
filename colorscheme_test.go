@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/gdamore/tcell/v2"
@@ -107,6 +108,7 @@ func TestParseColorschemeInvalidLineDoesNotWriteToStdout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer reader.Close()
 	savedStdout := os.Stdout
 	os.Stdout = writer
 	log.SetOutput(io.Discard)
@@ -213,5 +215,45 @@ func TestBuiltInColorschemesHaveNoProblems(t *testing.T) {
 		if len(problems) > 0 {
 			t.Errorf("built-in colorscheme %q has problems: %q", name, problems)
 		}
+	}
+}
+
+func TestLoadColorschemeWithProblemsUnreadableUserFile(t *testing.T) {
+	dir := setUpUserColorschemes(t, map[string]string{})
+	// A folder named like a colourscheme cannot be read as a file.
+	if err := os.Mkdir(filepath.Join(dir, "broken.micro"), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	colorscheme, problems, ok := LoadColorschemeWithProblems("broken")
+	if len(problems) != 1 || !strings.HasPrefix(problems[0], "cannot read file: ") {
+		t.Errorf("problems = %q, want one \"cannot read file: ...\" problem", problems)
+	}
+	if ok || colorscheme != nil {
+		t.Errorf("ok = %v, colorscheme nil = %v; want no colourscheme, as no built-in has this name", ok, colorscheme == nil)
+	}
+}
+
+func TestLoadColorschemeWithProblemsUnreadableUserFileUsesBuiltIn(t *testing.T) {
+	dir := setUpUserColorschemes(t, map[string]string{})
+	if err := os.Mkdir(filepath.Join(dir, "monokai.micro"), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	colorscheme, problems, ok := LoadColorschemeWithProblems("monokai")
+	if !ok || colorscheme == nil {
+		t.Fatal("LoadColorschemeWithProblems(\"monokai\") did not fall back to the built-in colourscheme")
+	}
+	if len(problems) != 1 {
+		t.Errorf("problems = %q, want one problem for the unreadable file", problems)
+	}
+}
+
+func TestLoadColorschemeWithProblemsMissingUserFileIsSilent(t *testing.T) {
+	setUpUserColorschemes(t, map[string]string{})
+
+	_, problems, ok := LoadColorschemeWithProblems("monokai")
+	if !ok || len(problems) != 0 {
+		t.Errorf("ok = %v, problems = %q; want the built-in colourscheme with no problems", ok, problems)
 	}
 }

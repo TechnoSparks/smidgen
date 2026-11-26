@@ -1,6 +1,8 @@
 package smidgen
 
 import (
+	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
@@ -153,15 +155,21 @@ func LoadColorscheme(name string) (Colorscheme, bool) {
 // LoadColorschemeWithProblems is like LoadColorscheme. It also returns a description of each
 // invalid statement in a user colorscheme file, as "line N: ...". Invalid statements are skipped.
 func LoadColorschemeWithProblems(name string) (Colorscheme, []string, bool) {
+	var problems []string
 	// Only plain names, so a name cannot point outside the directory.
 	if userColorschemeDir != "" && name != "" && filepath.Base(name) == name {
-		if data, err := os.ReadFile(filepath.Join(userColorschemeDir, name+".micro")); err == nil {
+		data, err := os.ReadFile(filepath.Join(userColorschemeDir, name+".micro"))
+		if err == nil {
 			colorscheme, problems := config.ParseColorschemeWithProblems(string(data))
 			return Colorscheme(colorscheme), problems, true
 		}
+		// A missing file just means there is no user colorscheme with this name.
+		if !errors.Is(err, fs.ErrNotExist) {
+			problems = []string{"cannot read file: " + err.Error()}
+		}
 	}
 	colorscheme, ok := LoadInternalColorscheme(name)
-	return colorscheme, nil, ok
+	return colorscheme, problems, ok
 }
 
 func LoadInternalColorscheme(name string) (Colorscheme, bool) {
