@@ -122,3 +122,38 @@ func TestParseColorschemeInvalidLineDoesNotWriteToStdout(t *testing.T) {
 		t.Error("ParseColorscheme wrote to stdout, which would draw over the editor")
 	}
 }
+
+func TestLoadColorschemeBrokenUserFile(t *testing.T) {
+	log.SetOutput(io.Discard)
+	t.Cleanup(func() {
+		log.SetOutput(os.Stderr)
+	})
+	setUpUserColorschemes(t, map[string]string{
+		"empty.micro":    "",
+		"garbage.micro":  "this is not a colorscheme\n\x00\xff random bytes\n",
+		"partial.micro":  "nonsense\ncolor-link default \"#112233,#445566\"\nmore nonsense\n",
+		"badcolor.micro": "color-link default \"not-a-colour,also-not\"\n",
+	})
+
+	// Broken files still load. They give the plain white on black default, not a crash.
+	plainBackground := tcell.ColorBlack
+	for _, name := range []string{"empty", "garbage", "badcolor"} {
+		colorscheme, ok := LoadColorscheme(name)
+		if !ok {
+			t.Errorf("LoadColorscheme(%q) ok = false, want true", name)
+			continue
+		}
+		if got := defaultBackground(colorscheme); got != plainBackground {
+			t.Errorf("LoadColorscheme(%q) background = %v, want %v", name, got, plainBackground)
+		}
+	}
+
+	// Valid lines in a file with bad lines still apply.
+	colorscheme, ok := LoadColorscheme("partial")
+	if !ok {
+		t.Fatal("LoadColorscheme(\"partial\") ok = false, want true")
+	}
+	if got, want := defaultBackground(colorscheme), tcell.GetColor("#445566"); got != want {
+		t.Errorf("partial file background = %v, want %v", got, want)
+	}
+}
