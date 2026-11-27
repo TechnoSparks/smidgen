@@ -6,7 +6,6 @@ import (
 	"runtime"
 	"slices"
 
-	"github.com/atotto/clipboard"
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -29,8 +28,8 @@ var useInternalClipboard bool
 var terminalScreen tcell.Screen
 
 // The system clipboard functions. Tests replace them.
-var nativeReadAll = clipboard.ReadAll
-var nativeWriteAll = clipboard.WriteAll
+var nativeReadAll = readNativeClipboard
+var nativeWriteAll = writeNativeClipboard
 
 // SetMode sets the clipboard mode to one of ModeTerminal, ModeExternal or ModeInternal.
 // Unknown modes are ignored. Changing the mode clears the internal clipboard.
@@ -119,9 +118,11 @@ func isWaylandPresent() bool {
 }
 
 func init() {
-	useInternalClipboard = clipboard.Unsupported
+	supported := nativeClipboardSupported()
 
-	if !clipboard.Unsupported && isUnix() && !(isWaylandPresent() || isX11Present()) {
+	useInternalClipboard = !supported
+
+	if supported && isUnix() && !(isWaylandPresent() || isX11Present()) {
 		useInternalClipboard = true
 	}
 }
