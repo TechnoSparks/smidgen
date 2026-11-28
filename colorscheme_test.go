@@ -137,8 +137,8 @@ func TestLoadColorschemeBrokenUserFile(t *testing.T) {
 		"badcolor.micro": "color-link default \"not-a-colour,also-not\"\n",
 	})
 
-	// Broken files still load. They give the plain white on black default, not a crash.
-	plainBackground := tcell.ColorBlack
+	// Broken files still load. They give the terminal default, not a crash.
+	plainBackground := tcell.ColorDefault
 	for _, name := range []string{"empty", "garbage", "badcolor"} {
 		colorscheme, ok := LoadColorscheme(name)
 		if !ok {

@@ -113,7 +113,7 @@ func ParseColorschemeWithProblems(text string) (Colorscheme, []string) {
 		statements = append(statements, statement{link: matches[1], colors: matches[2]})
 	}
 
-	defaultStyle := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorBlack)
+	defaultStyle := tcell.StyleDefault
 	c["default"] = defaultStyle
 	for _, s := range statements {
 		if s.link == "default" {
